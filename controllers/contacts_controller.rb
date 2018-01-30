@@ -1,88 +1,94 @@
 module ContactsController
-
   def contacts_index_action
     response = Unirest.get("http://localhost:3000/contacts")
     contact_hashs = response.body
     contacts = []
-
     contact_hashs.each do |contact_hash|
       contacts << Contact.new(contact_hash)
     end
-
-    products_index_view(contacts)
-  end
-
-  def contacts_show_action
-    print "Enter name: "
-    input_name = gets.chomp
-
-    response = Unirest.get("http://localhost:3000/contacts/#{input_name}")
-    contact_hash = response.body
-    contact = contact.new(contact_hash)
-
-    contacts_show_view(contact)
+    contacts_index_view(contacts)
   end
 
   def contacts_create_action
+    puts "Enter information for a new contact"
+    client_params = {}
 
-  puts "Enter information for a new contact"
-  client_params = {}
+    print "First Name: "
+    client_params[:first_name] = gets.chomp
 
-  print "First Name: "
-  client_params[:first_name] = gets.chomp
+    print "Middle Name: "
+    client_params[:middle_name] = gets.chomp
 
-  print "Middle Name: "
-  client_params[:middle_name] = gets.chomp
+    print "Last Name: "
+    client_params[:last_name] = gets.chomp
 
-  print "Last Name: "
-  client_params[:last_name] = gets.chomp
+    print "Email: "
+    client_params[:email] = gets.chomp
 
-  print "Email: "
-  client_params[:email] = gets.chomp
+    print "Bio: "
+    client_params[:bio] = gets.chomp
 
-  print "Bio: "
-  client_params[:bio] = gets.chomp
+    print "Phone Number: "
+    client_params[:phone_number] = gets.chomp
 
-  print "Phone Number: "
-  client_params[:phone_number] = gets.chomp
+    response = Unirest.post(
+                            "http://localhost:3000/contacts",
+                            parameters: client_params
+                            )
+    if response.code == 200
+      contact = response.body
+      puts JSON.pretty_generate(contact)
+    else
+      errors = response.body["errors"]
+      puts
+      puts "Your contact did not save"
+      puts "please look at the following reasons"
+      puts "------------------------------------"
+      errors.each do |error|
+        puts error
+      end
+    end
+  end
 
-  response = Unirest.post(
-                          "http://localhost:3000/contacts",
-                          parameters: client_params
-                          )
-
-  if response.code == 200
-    contact_data = response.body
-    puts JSON.pretty_generate(contact)
-  else 
-    errors = response.body["errors"]
-    errors.each do |error|
-      puts error
-
-    end 
-
-  def contacts_update_action
-    print "Enter name: "
+  def contacts_show_action
+    print "Enter a contact id: "
     input_id = gets.chomp
 
     response = Unirest.get("http://localhost:3000/contacts/#{input_id}")
-    product = response.body
+    contact_hash = response.body
+    contact = Contact.new(contact_hash)
+    contacts_show_view(contact)
+  end
 
+  def contacts_update_action
+    print "Enter a contact id: "
+    input_id = gets.chomp
+
+    response = Unirest.get("http://localhost:3000/contacts/#{input_id}")
+    contact = response.body
+
+    puts "Enter new information for contact ##{input_id}"
     client_params = {}
 
-    print "Name (#{contact["first_name"]}): "
+    print "First Name (#{contact["first_name"]}): "
     client_params[:first_name] = gets.chomp
 
-    print "middle_name (#{contact["middle_name"]}): "
+    print "Middle Name (#{contact["middle_name"]}): "
     client_params[:middle_name] = gets.chomp
 
-    print "last_name (#{contact["last_name"]}): "
+    print "Last Name (#{contact["last_name"]}): "
     client_params[:last_name] = gets.chomp
 
-    print "email (#{contact["email"]}): "
+    print "Email (#{contact["email"]}): "
     client_params[:email] = gets.chomp
 
-    client_params.delete_if { |key, value| value.empty? }
+    print "Bio (#{contact["bio"]}): "
+    client_params[:bio] = gets.chomp
+
+    print "Phone Number (#{contact["phone_number"]}): "
+    client_params[:phone_number] = gets.chomp
+
+    client_params.delete_if {|key, value| value.empty? }
 
     response = Unirest.patch(
                             "http://localhost:3000/contacts/#{input_id}",
@@ -90,10 +96,14 @@ module ContactsController
                             )
 
     if response.code == 200
-      contact_data = response.body
-      puts JSON.pretty_generate(product_data)
+      contact = response.body
+      puts JSON.pretty_generate(contact)
     else
       errors = response.body["errors"]
+      puts
+      puts "Your contact did not update"
+      puts "please look at the following reasons"
+      puts "------------------------------------"
       errors.each do |error|
         puts error
       end
@@ -101,10 +111,10 @@ module ContactsController
   end
 
   def contacts_destroy_action
-    print "Enter contact id: "
+    print "Enter a contact id that you want to delete: "
     input_id = gets.chomp
 
-    response = Unirest.delete("http://localhost:3000/contacts/#{name}")
+    response = Unirest.delete("http://localhost:3000/contacts/#{input_id}")
     data = response.body
     puts data["message"]
   end
